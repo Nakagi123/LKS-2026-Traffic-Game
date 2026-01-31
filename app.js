@@ -2,6 +2,8 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const spawnBtn = document.getElementById("spawnBtn");
 const stopBtn = document.getElementById("stopBtn");
+const stoppingBtn = document.getElementById("stoppingBtn");
+const resumeBtn = document.getElementById("resumeBtn");
 
 canvas.width = 800;
 canvas.height = 200;
@@ -31,7 +33,8 @@ function spawnCar() {
         width: 40,
         height: 20,
         y: lane.y,
-        speed: 2 * lane.direction
+        speed: 2 * lane.direction,
+        laneIndex: laneIndex
     };
     
     if (lane.direction === 1) {
@@ -46,6 +49,8 @@ function spawnCar() {
 
     
 let carSpawn = false;
+let carsMoving = true;
+
 
 function spawnLoop() {
     if(!carSpawn) return;
@@ -63,6 +68,18 @@ spawnBtn.addEventListener("click", () => {
 stopBtn.addEventListener("click", () => {
         carSpawn = false;    
 });
+resumeBtn.addEventListener("click", () => {
+        carsMoving = true;
+        if(!carSpawn) {
+            carSpawn = true;
+            spawnLoop();
+        };    
+});
+stoppingBtn.addEventListener("click", () => {
+        carsMoving = false;
+        carSpawn = false;      
+});
+
 
 
 
@@ -72,7 +89,21 @@ function update() {
     for (let i = cars.length - 1; i >= 0; i--) {
         const car = cars[i];
 
-        car.x += car.speed;
+    if (carsMoving) {
+                    // Lane 0 (top lane)
+            if (car.laneIndex === 0) {
+                // Slow down halfway for left→right
+                if (car.speed > 0 && car.x > canvas.width / 2) {
+                    car.speed = 1; // half speed
+                }
+            } else {
+                if (car.speed < 0 && car.x < canvas.width / 2) {
+                    car.speed = -1; // half speed
+                }
+            }
+            
+            car.x += car.speed;
+    }
 
         if (
             (car.speed > 0 && car.x > canvas.width) ||
