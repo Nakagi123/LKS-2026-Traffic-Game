@@ -11,26 +11,7 @@ carImg.src = "./assets/car.png";
 
 const cars = []
 
-let spawnIntervalId = null;
 
-function startSpawning() {
-    if (spawnIntervalId === null) {
-        spawnIntervalId = setInterval(spawnCar, 500);
-    }
-}
-
-function stopSpawning() {
-    clearInterval(spawnIntervalId);
-    spawnIntervalId = null;
-}
-
-
-spawnBtn.addEventListener("click", () => {
-    startSpawning();
-})
-stopBtn.addEventListener("click", () => {
-    stopSpawning();
-})
 
 function spawnCar() {
     const car = {
@@ -44,6 +25,26 @@ function spawnCar() {
     cars.push(car);
 }
     
+let carSpawn = false;
+
+function spawnLoop() {
+    if(!carSpawn) return;
+
+    spawnCar();
+    setTimeout(spawnLoop, 500);
+}
+
+spawnBtn.addEventListener("click", () => {
+    if(!carSpawn) {
+        carSpawn = true;
+        spawnLoop();
+    }
+});
+stopBtn.addEventListener("click", () => {
+        carSpawn = false;    
+});
+
+
 
 function update() {
 
@@ -52,7 +53,6 @@ function update() {
         const car = cars[i];
 
         car.x += car.speed;
-
 
         // if car is completely off the right side
         if (car.x > canvas.width) {
