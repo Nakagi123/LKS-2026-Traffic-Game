@@ -1,14 +1,35 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const spawnBtn = document.getElementById("spawnBtn");
+const stopBtn = document.getElementById("stopBtn");
 
 canvas.width = 800;
 canvas.height = 200;
 
+let carImg = new Image();
+carImg.src = "./assets/car.png";
+
 const cars = []
 
+let spawnIntervalId = null;
+
+function startSpawning() {
+    if (spawnIntervalId === null) {
+        spawnIntervalId = setInterval(spawnCar, 500);
+    }
+}
+
+function stopSpawning() {
+    clearInterval(spawnIntervalId);
+    spawnIntervalId = null;
+}
+
+
 spawnBtn.addEventListener("click", () => {
-    spawnCar();
+    startSpawning();
+})
+stopBtn.addEventListener("click", () => {
+    stopSpawning();
 })
 
 function spawnCar() {
@@ -22,6 +43,7 @@ function spawnCar() {
 
     cars.push(car);
 }
+    
 
 function update() {
 
@@ -44,8 +66,7 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   cars.forEach(car => {
-    ctx.fillStyle = "red";
-    ctx.fillRect(car.x, car.y, car.width, car.height);
+    ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
   });
 }
 
