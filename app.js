@@ -83,15 +83,26 @@ function update() {
     }
 }
 
+function drawCar(car) {
+    ctx.save();
+
+    if (car.speed < 0) {
+        ctx.translate(car.x + car.width, car.y);
+        ctx.scale(-1, 1);
+        ctx.drawImage(carImg, 0, 0, car.width, car.height);
+    } else {
+        ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
+    }
+
+    ctx.restore();
+}
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(roadImg, 0, roadY, roadWidth, roadHeight)
 
-    cars.forEach(car => {
-        ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
-    });
+    cars.forEach(drawCar);
 
     
 }
