@@ -36,22 +36,25 @@ class Car {
     constructor(x, y) {
         this.x = x
         this.y = y
+        this.speed = 0          // ← START STOPPED
         this.maxSpeed = 2
+        this.acceleration = 0.05
         this.el = document.createElement("div")
         this.el.className = "car"
         road.appendChild(this.el)
-    }
+}
 
-        move(cars) {
+
+    move(cars) {
         let stopLine = 300
 
-        this.speed = this.maxSpeed
-
+        // RED LIGHT STOP
         if (
             trafficLight.state === "red" &&
             this.y <= stopLine &&
             this.y >= stopLine - 10
         ) {
+            this.speed = 0
             return
         }
 
@@ -71,18 +74,28 @@ class Car {
             const distance = this.y - nearestCar.y
 
             if (distance <= 40) {
-                return
+                this.speed = 0
+            } else if (distance <= 100) {
+                this.speed = Math.max(this.speed - 0.1, 1)
+            } else {
+                this.speed = Math.min(
+                    this.speed + this.acceleration,
+                    this.maxSpeed
+                )
             }
-
-            if (distance <= 100) {
-                this.speed = 1
-            }
+        } else {
+            // no car in front → free acceleration
+            this.speed = Math.min(
+                this.speed + this.acceleration,
+                this.maxSpeed
+            )
         }
 
         this.y -= this.speed
         this.el.style.transform =
             `translate(${this.x}px, ${this.y}px) rotate(-90deg)`
     }
+
 
     isOut() {
         return this.y < -80
