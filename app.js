@@ -47,6 +47,7 @@ class Car {
 
     move(cars) {
         let stopLine = 300
+        const TURN_LINE = 320
 
         // RED LIGHT STOP
         if (

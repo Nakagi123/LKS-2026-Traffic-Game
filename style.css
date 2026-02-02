@@ -6,7 +6,7 @@ body {
 
 #road {
     position: relative;
-    width: 300px;
+    width: 600px;
     height: 800px;
     background: #333;
     margin: 20px auto;
@@ -29,8 +29,8 @@ body {
 
 #traffic-light {
     position: absolute;
-    top: 260px;
-    width: 300px;
+    top: 300px;
+    width: 600px;
     height: 30px;
     background: green;
 }
