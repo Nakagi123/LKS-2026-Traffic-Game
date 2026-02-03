@@ -1,62 +1,86 @@
 const road = document.getElementById("road")
 const lightEl = document.getElementById("traffic-light")
+const button = document.getElementById("button")
 
 let cars = []
 
 class TrafficLight {
-    constructor() {
-        this.state = "green"
-        this.change()
-    }
+  constructor() {
+    this.states = ['green', 'yellow', 'red'];
+    this.currentIndex = 0;
+    this.state = this.states[this.currentIndex]
+    this.render();
+  }
 
-    change() {
-        setTimeout(() => {
-            this.state = "yellow"
-            lightEl.style.background = "yellow"
+  next() {
+    this.currentIndex = 
+        (this.currentIndex + 1) % this.states.length
+    this.state = this.states[this.currentIndex]
+    this.render()
+  }
 
-            setTimeout(() => {
-                this.state = "red"
-                lightEl.style.background = "red"
-
-                setTimeout(() => {
-                    this.state = "green"
-                    lightEl.style.background = "green"
-                    this.change()
-                }, 6000)
-
-            }, 2000)
-
-        }, 4000)
-    }
+  render() {
+    lightEl.style.background = this.state
+  }
 }
 
 const trafficLight = new TrafficLight()
 
+button.addEventListener("click", () => {
+    trafficLight.next()
+})
+
+if (trafficLight.state === "green") trafficLight.next()
+else if (trafficLight.state === "yellow") trafficLight.next()
+
+
 class Car {
-    constructor(x, y) {
+    constructor(x, y, direction = "up") {
         this.x = x
         this.y = y
-        this.speed = 0          // ← START STOPPED
+        this.direction = direction
+        this.length = 40 // or whatever fits your car div
+
+
+        this.speed = 0
         this.maxSpeed = 2
         this.acceleration = 0.05
+
         this.el = document.createElement("div")
         this.el.className = "car"
         road.appendChild(this.el)
-}
-
+    }
 
     move(cars) {
-        let stopLine = 300
-        const TURN_LINE = 320
+        const stopLine = 300
 
-        // RED LIGHT STOP
-        if (
-            trafficLight.state === "red" &&
-            this.y <= stopLine &&
-            this.y >= stopLine - 10
-        ) {
-            this.speed = 0
-            return
+        // 🚦 RED LIGHT STOP (direction-aware)
+        if (trafficLight.state === "red") {
+        const frontY =
+            this.direction === "up" ? this.y : this.y + this.length
+            // UP direction
+            if (this.direction === "up") {
+                if (frontY > stopLine + this.length) {
+                    // already passed → commit
+                } else if (frontY <= stopLine) {
+                    this.speed = 0
+                    this.y = stopLine
+                    this.render()
+                    return
+                }
+            }
+
+            // DOWN direction
+            if (this.direction === "down") {
+                if (frontY < stopLine - this.length) {
+                    // already passed → commit
+                } else if (frontY >= stopLine) {
+                    this.speed = 0
+                    this.y = stopLine
+                    this.render()
+                    return
+                }
+            }
         }
 
         let nearestCar = null
@@ -64,57 +88,80 @@ class Car {
         for (let car of cars) {
             if (car === this) continue
             if (car.x !== this.x) continue
-            if (car.y < this.y) {
-                if (!nearestCar || car.y > nearestCar.y) {
+            if (car.direction !== this.direction) continue
+
+            const isAhead =
+                this.direction === "up"
+                    ? car.y < this.y
+                    : car.y > this.y
+
+            if (isAhead) {
+                if (
+                    !nearestCar ||
+                    (this.direction === "up"
+                        ? car.y > nearestCar.y
+                        : car.y < nearestCar.y)
+                ) {
                     nearestCar = car
                 }
             }
         }
 
         if (nearestCar) {
-            const distance = this.y - nearestCar.y
+            const distance = Math.abs(this.y - nearestCar.y)
 
-            if (distance <= 40) {
+            if (distance <= 60) {
                 this.speed = 0
             } else if (distance <= 100) {
-                this.speed = Math.max(this.speed - 0.1, 1)
+                this.speed = Math.max(this.speed - this.acceleration, 0)
             } else {
-                this.speed = Math.min(
-                    this.speed + this.acceleration,
-                    this.maxSpeed
-                )
+                this.speed = Math.min(this.speed + this.acceleration, this.maxSpeed)
             }
         } else {
-            // no car in front → free acceleration
-            this.speed = Math.min(
-                this.speed + this.acceleration,
-                this.maxSpeed
-            )
+            this.speed = Math.min(this.speed + this.acceleration, this.maxSpeed)
         }
 
-        this.y -= this.speed
-        this.el.style.transform =
-            `translate(${this.x}px, ${this.y}px) rotate(-90deg)`
+        this.updatePosition()
+        this.render()
     }
 
+    updatePosition() {
+        this.y += this.direction === "up" ? -this.speed : this.speed
+    }
+
+    render() {
+        this.el.style.transform =
+            `translate(${this.x}px, ${this.y}px) rotate(${this.direction === "up" ? -90 : 90}deg)`
+    }
 
     isOut() {
-        return this.y < -80
+        return this.direction === "up"
+            ? this.y < -80
+            : this.y > 880
     }
 
     destroy() {
         this.el.remove()
     }
-
-
 }
 
-const lanes = [130, 170]
+
+const lanes = [
+    { x: 110, direction: "up" },
+    { x: 150, direction: "up" },
+    { x: 190, direction: "down" },
+    { x: 230, direction: "down" }
+]
 
 setInterval(() => {
-    const laneX = lanes[Math.floor(Math.random() * lanes.length)]
-    cars.push(new Car(laneX, 800))
-}, 1000)
+    const lane = lanes[Math.floor(Math.random() * lanes.length)]
+
+    const y = lane.direction === "up" ? 800 : -80
+
+    cars.push(new Car(lane.x, y, lane.direction))
+}, 600)
+
+
 
 function gameLoop() {
     cars.forEach((car) => {
