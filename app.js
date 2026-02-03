@@ -2,6 +2,11 @@ const road = document.getElementById("road")
 const lightEl = document.getElementById("traffic-light")
 const button = document.getElementById("button")
 
+const ROAD_WIDTH = 600
+const ROAD_HEIGHT = 600
+const CENTER_X = ROAD_WIDTH / 2
+const CENTER_Y = ROAD_HEIGHT / 2
+
 let cars = []
 
 class TrafficLight {
@@ -39,8 +44,7 @@ class Car {
         this.x = x
         this.y = y
         this.direction = direction
-        this.length = 40 // or whatever fits your car div
-
+        this.length = 40 
 
         this.speed = 0
         this.maxSpeed = 2
@@ -52,64 +56,103 @@ class Car {
     }
 
     move(cars) {
-        const stopLine = 300
+        const STOP_LINE_Y1 = CENTER_Y - 100
+        const STOP_LINE_X1 = CENTER_X - 100
+        const STOP_LINE_Y2 = CENTER_Y + 100
+        const STOP_LINE_X2 = CENTER_X + 100
 
-        // 🚦 RED LIGHT STOP (direction-aware)
         if (trafficLight.state === "red") {
-        const frontY =
-            this.direction === "up" ? this.y : this.y + this.length
-            // UP direction
-            if (this.direction === "up") {
-                if (frontY > stopLine + this.length) {
-                    // already passed → commit
-                } else if (frontY <= stopLine) {
-                    this.speed = 0
-                    this.y = stopLine
-                    this.render()
-                    return
-                }
-            }
 
-            // DOWN direction
-            if (this.direction === "down") {
-                if (frontY < stopLine - this.length) {
-                    // already passed → commit
-                } else if (frontY >= stopLine) {
-                    this.speed = 0
-                    this.y = stopLine
-                    this.render()
-                    return
-                }
+        /* 🚗 UP */
+        if (this.direction === "up") {
+            const front = this.y
+
+            if (front <= STOP_LINE_Y2) {
+            this.speed = 0
+            this.y = STOP_LINE_Y2
+            this.render()
+            return
             }
         }
 
-        let nearestCar = null
+        /* 🚗 DOWN */
+        if (this.direction === "down") {
+            const front = this.y + this.length
 
-        for (let car of cars) {
+            if (front >= STOP_LINE_Y1) {
+            this.speed = 0
+            this.y = STOP_LINE_Y1 - this.length
+            this.render()
+            return
+            }
+        }
+
+        /* 🚗 LEFT */
+        if (this.direction === "left") {
+            const front = this.x
+
+            if (front <= STOP_LINE_X2) {
+            this.speed = 0
+            this.x = STOP_LINE_X2
+            this.render()
+            return
+            }
+        }
+
+        /* 🚗 RIGHT */
+        if (this.direction === "right") {
+            const front = this.x + this.length
+
+            if (front >= STOP_LINE_X1) {
+            this.speed = 0
+            this.x = STOP_LINE_X1 - this.length
+            this.render()
+            return
+            }
+        }
+        }
+            let nearestCar = null
+
+            const isVertical =
+            this.direction === "up" || this.direction === "down"
+
+            for (let car of cars) {
             if (car === this) continue
-            if (car.x !== this.x) continue
             if (car.direction !== this.direction) continue
 
-            const isAhead =
-                this.direction === "up"
-                    ? car.y < this.y
-                    : car.y > this.y
+            // must be in the same lane
+            if (isVertical && car.x !== this.x) continue
+            if (!isVertical && car.y !== this.y) continue
 
-            if (isAhead) {
-                if (
-                    !nearestCar ||
-                    (this.direction === "up"
-                        ? car.y > nearestCar.y
-                        : car.y < nearestCar.y)
-                ) {
-                    nearestCar = car
-                }
+            const isAhead = isVertical
+                ? (this.direction === "up"
+                    ? car.y < this.y
+                    : car.y > this.y)
+                : (this.direction === "left"
+                    ? car.x < this.x
+                    : car.x > this.x)
+
+            if (!isAhead) continue
+
+            if (
+                !nearestCar ||
+                (isVertical
+                ? (this.direction === "up"
+                    ? car.y > nearestCar.y
+                    : car.y < nearestCar.y)
+                : (this.direction === "left"
+                    ? car.x > nearestCar.x
+                    : car.x < nearestCar.x))
+            ) {
+                nearestCar = car
             }
-        }
+            }
 
         if (nearestCar) {
-            const distance = Math.abs(this.y - nearestCar.y)
-
+            const distance = isVertical
+                ? Math.abs(this.y - nearestCar.y)
+                : Math.abs(this.x - nearestCar.x)
+                
             if (distance <= 60) {
                 this.speed = 0
             } else if (distance <= 100) {
@@ -125,20 +168,34 @@ class Car {
         this.render()
     }
 
-    updatePosition() {
-        this.y += this.direction === "up" ? -this.speed : this.speed
-    }
+            updatePosition() {
+            if (this.direction === "up") this.y -= this.speed
+            if (this.direction === "down") this.y += this.speed
+            if (this.direction === "left") this.x -= this.speed
+            if (this.direction === "right") this.x += this.speed
+            }
 
-    render() {
-        this.el.style.transform =
-            `translate(${this.x}px, ${this.y}px) rotate(${this.direction === "up" ? -90 : 90}deg)`
-    }
 
-    isOut() {
-        return this.direction === "up"
-            ? this.y < -80
-            : this.y > 880
-    }
+            render() {
+            let rotation = 0
+
+            if (this.direction === "up") rotation = -90
+            if (this.direction === "down") rotation = 90
+            if (this.direction === "left") rotation = 180
+            if (this.direction === "right") rotation = 0
+
+            this.el.style.transform =
+                `translate(${this.x}px, ${this.y}px) rotate(${rotation}deg)`
+            }
+
+
+            isOut() {
+            if (this.direction === "up") return this.y < -80
+            if (this.direction === "down") return this.y > 880
+            if (this.direction === "left") return this.x < -80
+            if (this.direction === "right") return this.x > 880
+            }
+
 
     destroy() {
         this.el.remove()
@@ -147,21 +204,29 @@ class Car {
 
 
 const lanes = [
-    { x: 110, direction: "up" },
-    { x: 150, direction: "up" },
-    { x: 190, direction: "down" },
-    { x: 230, direction: "down" }
+  // vertical lanes
+  { x: 260, direction: "up" },
+  { x: 300, direction: "down" },
+
+  // horizontal lanes
+  { y: 240, direction: "right" },
+  { y: 290, direction: "left" }
 ]
 
 setInterval(() => {
-    const lane = lanes[Math.floor(Math.random() * lanes.length)]
+  const lane = lanes[Math.floor(Math.random() * lanes.length)]
+  let x, y
 
-    const y = lane.direction === "up" ? 800 : -80
+  if (lane.direction === "up" || lane.direction === "down") {
+    x = lane.x
+    y = lane.direction === "up" ? 800 : -80
+  } else {
+    y = lane.y
+    x = lane.direction === "right" ? -80 : 800
+  }
 
-    cars.push(new Car(lane.x, y, lane.direction))
+  cars.push(new Car(x, y, lane.direction))
 }, 600)
-
-
 
 function gameLoop() {
     cars.forEach((car) => {
