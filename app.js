@@ -44,7 +44,8 @@ class Car {
         this.x = x
         this.y = y
         this.direction = direction
-        this.length = 40 
+        this.length = 40 // or whatever fits your car div
+
 
         this.speed = 0
         this.maxSpeed = 2
